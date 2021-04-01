@@ -1,4 +1,5 @@
 USE AdventureWorks2008R2
+go
 
 -- 1) Liệt kê danh sách các hóa đơn (SalesOrderID) lập trong tháng 6 năm 2008 có
 -- tổng tiền > 70000, thông tin gồm SalesOrderID, Orderdate, SubTotal, trong đó
@@ -54,11 +55,11 @@ having count(hre.BusinessEntityID) > 20
 -- BusinessEntityID, Vendor_Name, ProductID, SumOfQty, SubTotal
 -- (sử dụng các bảng [Purchasing].[Vendor], [Purchasing].[PurchaseOrderHeader] và
 -- [Purchasing].[PurchaseOrderDetail])
-select pv.BusinessEntityID, pv.Name, ppod.ProductID, 
+select pv.BusinessEntityID, pv.Name, ppod.ProductID,
     SumOfQty = SUM(ppod.OrderQty), SubTotal = SUM(ppod.OrderQty * ppod.UnitPrice)
-from Purchasing.Vendor pv 
-join Purchasing.PurchaseOrderHeader ppoh on pv.BusinessEntityID = ppoh.VendorID 
-join Purchasing.PurchaseOrderDetail ppod on ppoh.PurchaseOrderID = ppod.PurchaseOrderID
+from Purchasing.Vendor pv
+    join Purchasing.PurchaseOrderHeader ppoh on pv.BusinessEntityID = ppoh.VendorID
+    join Purchasing.PurchaseOrderDetail ppod on ppoh.PurchaseOrderID = ppod.PurchaseOrderID
 WHERE pv.Name like '%Bicycles'
 group by pv.BusinessEntityID, pv.Name, ppod.ProductID
 having SUM(ppod.OrderQty * ppod.UnitPrice) > 800000
@@ -67,8 +68,8 @@ having SUM(ppod.OrderQty * ppod.UnitPrice) > 800000
 -- trị giá >10000, thông tin gồm ProductID, Product_Name, CountOfOrderID và SubTotal
 select pp.ProductID, pp.Name, CountOfOrderID = count(ssod.SalesOrderID), SubTotal = SUM(ssod.OrderQty * ssod.UnitPrice)
 from Production.Product pp
-join sales.SalesOrderDetail ssod on ssod.ProductID = pp.ProductID
-join  sales.SalesOrderHeader ssoh on ssod.SalesOrderID = ssoh.SalesOrderID
+    join sales.SalesOrderDetail ssod on ssod.ProductID = pp.ProductID
+    join sales.SalesOrderHeader ssoh on ssod.SalesOrderID = ssoh.SalesOrderID
 WHERE Datepart(q, ssoh.OrderDate) = 1 and YEAR(ssoh.OrderDate) = 2008
 group by pp.ProductID, pp.Name
 HAVING SUM(ssod.OrderQty * ssod.UnitPrice) > 10000 and count(ssod.SalesOrderID) > 500
@@ -78,8 +79,8 @@ HAVING SUM(ssod.OrderQty * ssod.UnitPrice) > 10000 and count(ssod.SalesOrderID) 
 -- as FullName), Số hóa đơn (CountOfOrders).
 select sc.PersonID, FullName = (pp.FirstName + ' ' + pp.LastName), CountOfOrders = count(ssoh.SalesOrderID)
 from Person.Person pp
-join Sales.Customer sc on pp.BusinessEntityID = sc.CustomerID
-join Sales.SalesOrderHeader ssoh on ssoh.CustomerID = sc.CustomerID
+    join Sales.Customer sc on pp.BusinessEntityID = sc.CustomerID
+    join Sales.SalesOrderHeader ssoh on ssoh.CustomerID = sc.CustomerID
 WHERE year(ssoh.OrderDate) BETWEEN 2007 and 2008
 group by sc.PersonID, pp.FirstName + ' ' + pp.LastName
 having count(ssoh.SalesOrderID) > 25
@@ -90,8 +91,8 @@ having count(ssoh.SalesOrderID) > 25
 -- Sales.SalesOrderDetail và Production.Product)
 select pp.ProductID, pp.Name, CountOfOrderQty = sum(ssod.OrderQty), YearOfSale=year(ssoh.OrderDate)
 from Production.Product pp
-join sales.SalesOrderDetail ssod on ssod.ProductID = pp.ProductID
-join  sales.SalesOrderHeader ssoh on ssod.SalesOrderID = ssoh.SalesOrderID
+    join sales.SalesOrderDetail ssod on ssod.ProductID = pp.ProductID
+    join sales.SalesOrderHeader ssoh on ssod.SalesOrderID = ssoh.SalesOrderID
 WHERE pp.Name like '%Bike' or pp.Name like '%Sport'
 group by pp.ProductID, pp.Name, year(ssoh.OrderDate)
 having sum(ssod.OrderQty) > 500
@@ -104,7 +105,7 @@ having sum(ssod.OrderQty) > 500
 -- [HumanResources].[EmployeePayHistory]
 select hrd.DepartmentID, hrd.Name, AvgofRate = avg(heph.Rate)
 from HumanResources.Department hrd
-join HumanResources.EmployeeDepartmentHistory hedh on hrd.DepartmentID = hedh.DepartmentID
-join HumanResources.EmployeePayHistory heph on hedh.BusinessEntityID = heph.BusinessEntityID
+    join HumanResources.EmployeeDepartmentHistory hedh on hrd.DepartmentID = hedh.DepartmentID
+    join HumanResources.EmployeePayHistory heph on hedh.BusinessEntityID = heph.BusinessEntityID
 group by hrd.DepartmentID, hrd.Name
 having avg(heph.Rate) > 30
