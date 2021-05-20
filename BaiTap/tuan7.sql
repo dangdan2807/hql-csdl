@@ -1,6 +1,10 @@
 USE AdventureWorks2008R2
 GO
 
+SELECT *
+FROM Sales.SalesOrderHeader
+GO
+
 -- 1. Tạo một Instead of trigger thực hiện trên view. Thực hiện theo các bước sau:
 -- Tạo mới 2 bảng M_Employees và M_Department theo cấu trúc sau: 
 -- create table M_Department
@@ -27,63 +31,63 @@ GO
 -- insert EmpDepart_view values(1, 'Nguyen','Hoang','Huy', 11,'Marketing','Sales')
 
 -- tạo table 
-create table M_Department
+CREATE TABLE M_Department
 (
-	DepartmentID int not null primary key,
-	Name nvarchar(50),
-	GroupName nvarchar(50)
+	DepartmentID INT NOT NULL PRIMARY KEY,
+	Name NVARCHAR(50),
+	GroupName NVARCHAR(50)
 )
 
-create table M_Employees
+CREATE TABLE M_Employees
 (
-	EmployeeID int not null primary key,
-	Firstname nvarchar(50),
-	MiddleName nvarchar(50),
-	LastName nvarchar(50),
-	DepartmentID int foreign key references M_Department(DepartmentID)
+	EmployeeID INT NOT NULL PRIMARY KEY,
+	Firstname NVARCHAR(50),
+	MiddleName NVARCHAR(50),
+	LastName NVARCHAR(50),
+	DepartmentID INT FOREIGN KEY REFERENCES M_Department(DepartmentID)
 )
 GO
 
 -- tạo view
-create view EmpDepart_View
-as
-	select e.EmployeeID, e.FirstName, e.MiddleName, e.LastName,
+CREATE VIEW EmpDepart_View
+AS
+	SELECT e.EmployeeID, e.FirstName, e.MiddleName, e.LastName,
 		d.DepartmentID, d.Name, d.GroupName
-	from M_Department as d join M_Employees as e
-		on d.DepartmentID = e.DepartmentID
-go
+	FROM M_Department AS d JOIN M_Employees AS e
+		ON d.DepartmentID = e.DepartmentID
+GO
 
 -- tạo trigger
-create trigger insteadof_trigger on EmpDepart_View
-	instead of insert
-	as	
-		begin
-	insert M_Department
-	select DepartmentID, Name, groupName
-	from inserted
+CREATE TRIGGER insteadof_trigger ON EmpDepart_View
+	instead OF INSERT
+	AS	
+	BEGIN
+	INSERT M_Department
+	SELECT DepartmentID, Name, groupName
+	FROM inserted
 
-	insert M_Employees
-	select EmployeeID, FirstName, MiddleName, LastName, DepartmentID
-	from inserted
-end
-go
+	INSERT M_Employees
+	SELECT EmployeeID, FirstName, MiddleName, LastName, DepartmentID
+	FROM inserted
+END
+GO
 
 
 -- test trigger
-select *
-from EmpDepart_View
-insert EmpDepart_view
-values(1, 'Nguyen', 'Hoang', 'Huy', 11, 'Marketing', 'Sales')
+SELECT *
+FROM EmpDepart_View
+INSERT EmpDepart_view
+VALUES(1, 'Nguyen', 'Hoang', 'Huy', 11, 'Marketing', 'Sales')
 
-select *
-from M_Department
-select *
-from M_Employees
+SELECT *
+FROM M_Department
+SELECT *
+FROM M_Employees
 
-drop view dbo.EmpDepart_View
-drop TRIGGER dbo.insteadof_trigger
-drop table dbo.M_Department
-drop table dbo.M_Employees
+DROP VIEW dbo.EmpDepart_View
+DROP TRIGGER dbo.insteadof_trigger
+DROP TABLE dbo.M_Department
+DROP TABLE dbo.M_Employees
 
 -- 2. Tạo một trigger thực hiện trên bảng MySalesOrders có chức năng thiết lập độ ưu 
 -- tiên của khách hàng (CustPriority) khi người dùng thực hiện các thao tác Insert, 
@@ -116,45 +120,45 @@ drop table dbo.M_Employees
 -- xóa hoặc update một record trên bảng MSalesOrders
 
 -- tạo table
-create table MCustomer
+CREATE TABLE MCustomer
 (
-	CustomerID int not null primary key,
-	CustPriority int
+	CustomerID INT NOT NULL PRIMARY KEY,
+	CustPriority INT
 )
 
-create table MSalesOrders
+CREATE TABLE MSalesOrders
 (
-	SalesOrderID int not null primary key,
-	OrderDate date,
-	SubTotal money,
-	CustomerID int foreign key references MCustomer(CustomerID)
+	SalesOrderID INT NOT NULL PRIMARY KEY,
+	OrderDate DATE,
+	SubTotal MONEY,
+	CustomerID INT FOREIGN KEY REFERENCES MCustomer(CustomerID)
 )
-go
+GO
 
 -- chèn dữ liệu
-INSERT into MCustomer
+INSERT INTO MCustomer
 	(CustomerID, CustPriority)
-SELECT sc.CustomerID, null
-FROM Sales.Customer as sc
-WHERE sc.CustomerID BETWEEN 30101 and 30117
+SELECT sc.CustomerID, NULL
+FROM Sales.Customer AS sc
+WHERE sc.CustomerID BETWEEN 30101 AND 30117
 
-INSERT into MSalesOrders
+INSERT INTO MSalesOrders
 	(SalesOrderID, OrderDate, SubTotal, CustomerID)
-select s.SalesOrderID, s.OrderDate, s.SubTotal, s.CustomerID
-from Sales.SalesOrderHeader as s
-WHERE s.CustomerID BETWEEN 30101 and 30117
+SELECT s.SalesOrderID, s.OrderDate, s.SubTotal, s.CustomerID
+FROM Sales.SalesOrderHeader AS s
+WHERE s.CustomerID BETWEEN 30101 AND 30117
 
-select *
-from dbo.MSalesOrders
-select *
-from dbo.MCustomer
-go
+SELECT *
+FROM dbo.MSalesOrders
+SELECT *
+FROM dbo.MCustomer
+GO
 
 --tạo trigger CustPriority
 
-create TRIGGER set_CustPriority on MSalesOrders
-for INSERT, UPDATE, DELETE
-as
+CREATE TRIGGER set_CustPriority ON MSalesOrders
+FOR INSERT, UPDATE, DELETE
+AS
 WITH
 	CTE
 	AS
@@ -170,35 +174,35 @@ WITH
 
 	UPDATE Mcustomer
 	SET custpriority = (
-		case
-		when t.Total < 10000 then 3
-		when t.Total between 10000 and 49999 then 2
-		when t.Total >= 50000 then 1
-		end
+		CASE
+		WHEN t.Total < 10000 THEN 3
+		WHEN t.Total BETWEEN 10000 AND 49999 THEN 2
+		WHEN t.Total >= 50000 THEN 1
+		END
 	)
-	from MSalesOrders as c INNER JOIN CTE ON CTE.CustomerId = c.CustomerId
+	FROM MSalesOrders AS c INNER JOIN CTE ON CTE.CustomerId = c.CustomerId
 	LEFT JOIN (
-		select MsalesOrders.customerID, SUM(SubTotal) Total
-	from MsalesOrders inner join CTE
-		on CTE.CustomerId = MsalesOrders.CustomerId
-	group by MsalesOrders.customerID
+		SELECT MsalesOrders.customerID, SUM(SubTotal) Total
+	FROM MsalesOrders INNER JOIN CTE
+		ON CTE.CustomerId = MsalesOrders.CustomerId
+	GROUP BY MsalesOrders.customerID
 	) t ON CTE.CustomerId = t.CustomerId
 GO
 
-insert MsalesOrders
-values(71847, '2016-01-01', 10000, 30112)
+INSERT MsalesOrders
+VALUES(71847, '2016-01-01', 10000, 30112)
 
-select*
-from Mcustomer
-where CustomerId=30112
+SELECT*
+FROM Mcustomer
+WHERE CustomerId=30112
 
-select*
-from MSalesOrders
-go
+SELECT*
+FROM MSalesOrders
+GO
 
-drop trigger dbo.set_CustPriority
-drop table dbo.MSalesOrders
-drop table dbo.MCustomer
+DROP TRIGGER dbo.set_CustPriority
+DROP TABLE dbo.MSalesOrders
+DROP TABLE dbo.MCustomer
 
 -- 3. Viết một trigger thực hiện trên bảng MEmployees sao cho khi người dùng thực
 -- hiện chèn thêm một nhân viên mới vào bảng MEmployees thì chương trình cập 
@@ -226,45 +230,45 @@ drop table dbo.MCustomer
 -- EmployeeDepartmentHistory
 -- Viết trigger theo yêu cầu trên và viết câu lệnh hiện thực trigger
 
-create table MDepartment
+CREATE TABLE MDepartment
 (
-	DepartmentID int not null primary key,
-	Name nvarchar(50),
-	NumOfEmployee int
+	DepartmentID INT NOT NULL PRIMARY KEY,
+	Name NVARCHAR(50),
+	NumOfEmployee INT
 )
 
-create table MEmployees
+CREATE TABLE MEmployees
 (
-	EmployeeID int not null,
-	FirstName nvarchar(50),
-	MiddleName nvarchar(50),
-	LastName nvarchar(50),
-	DepartmentID int foreign key references MDepartment(DepartmentID),
-	constraint pk_emp_depart primary key(EmployeeID, DepartmentID)
+	EmployeeID INT NOT NULL,
+	FirstName NVARCHAR(50),
+	MiddleName NVARCHAR(50),
+	LastName NVARCHAR(50),
+	DepartmentID INT FOREIGN KEY REFERENCES MDepartment(DepartmentID),
+	CONSTRAINT pk_emp_depart PRIMARY KEY(EmployeeID, DepartmentID)
 )
-go
+GO
 
-insert MDepartment
-select [DepartmentID], [Name], null
-from [HumanResources].[Department]
+INSERT MDepartment
+SELECT [DepartmentID], [Name], NULL
+FROM [HumanResources].[Department]
 
-insert [Memployees]
-select e.[BusinessEntityID], [FirstName], [MiddleName], [LastName], [DepartmentID]
-from [HumanResources].[Employee] e join [Person].[Person] p on e.BusinessEntityID=p.BusinessEntityID
-	join [HumanResources].[EmployeeDepartmentHistory] h on e.BusinessEntityID=h.BusinessEntityID
+INSERT [Memployees]
+SELECT e.[BusinessEntityID], [FirstName], [MiddleName], [LastName], [DepartmentID]
+FROM [HumanResources].[Employee] e JOIN [Person].[Person] p ON e.BusinessEntityID=p.BusinessEntityID
+	JOIN [HumanResources].[EmployeeDepartmentHistory] h ON e.BusinessEntityID=h.BusinessEntityID
 
-select*
-from [dbo].[Memployees]
-order by [DepartmentID]
-go
+SELECT*
+FROM [dbo].[Memployees]
+ORDER BY [DepartmentID]
+GO
 
 -- tạo trigger
-create trigger kiemTraSLNV on dbo.MEmployees
-for INSERT
-as 
-	DECLARE @slNV int, @DepartID int
+CREATE TRIGGER kiemTraSLNV ON dbo.MEmployees
+FOR INSERT
+AS 
+	DECLARE @slNV INT, @DepartID INT
 	SELECT @DepartID = i.DepartmentID
-FROM inserted as i
+FROM inserted AS i
 
 	SET @slNV = (
 		SELECT COUNT(*)
@@ -272,31 +276,31 @@ FROM [dbo].[Memployees] e
 WHERE e.DepartmentID = @DepartID
 		)
 	
-	if(@slNV > 200)
+	IF(@slNV > 200)
 		BEGIN
-	print N'Bộ phận đã đủ nhân viên'
-	rollback
-end
-	else
-		begin
-	update MDepartment
-		set NumOfEmployee = @slNV
-		where DepartmentID = @DepartID
-end
-go
+	PRINT N'Bộ phận đã đủ nhân viên'
+	ROLLBACK
+END
+	ELSE
+		BEGIN
+	UPDATE MDepartment
+		SET NumOfEmployee = @slNV
+		WHERE DepartmentID = @DepartID
+END
+GO
 
 --test trigger
-insert [dbo].[Memployees]
-values(291, 'Nguyen', 'Hoang', 'Anh', 1),
+INSERT [dbo].[Memployees]
+VALUES(291, 'Nguyen', 'Hoang', 'Anh', 1),
 	(292, 'Nguyen', 'Hoang', 'Thu', 2)
 
 --kiem tra ket qua
-select *
-from MDepartment
+SELECT *
+FROM MDepartment
 
-drop trigger dbo.kiemTraSLNV;
-drop table dbo.MEmployees
-drop table dbo.MDepartment
+DROP TRIGGER dbo.kiemTraSLNV;
+DROP TABLE dbo.MEmployees
+DROP TABLE dbo.MDepartment
 GO
 
 -- 4. Bảng [Purchasing].[Vendor], chứa thông tin của nhà cung cấp, thuộc tính
@@ -315,15 +319,15 @@ GO
 -- Freight) VALUES ( 2 ,3, 261, 1652, 4 ,GETDATE() ,GETDATE() , 44594.55,
 -- ,3567.564, ,1114.8638 );
 
-CREATE trigger Purchasing.CreditRating_trigger on [Purchasing].[PurchaseOrderHeader]
-for insert
+CREATE TRIGGER Purchasing.CreditRating_trigger ON [Purchasing].[PurchaseOrderHeader]
+FOR INSERT
 AS
-	if exists (
-		select *
-from [Purchasing].[PurchaseOrderHeader] as p join inserted as i
-	on p.PurchaseOrderID = i.PurchaseOrderID join [Purchasing].[Vendor] as v
-	on p.VendorID = v.BusinessEntityID
-where v.CreditRating = 5
+	IF EXISTS (
+		SELECT *
+FROM [Purchasing].[PurchaseOrderHeader] AS p JOIN inserted AS i
+	ON p.PurchaseOrderID = i.PurchaseOrderID JOIN [Purchasing].[Vendor] AS v
+	ON p.VendorID = v.BusinessEntityID
+WHERE v.CreditRating = 5
 	)
 		BEGIN
 	RAISERROR ('A vendor''s credit rating is too low to accept new purchase orders.', 16, 1);
@@ -336,7 +340,7 @@ INSERT INTO Purchasing.PurchaseOrderHeader
 VALUES
 	( 2, 3, 261, 1652, 4 , GETDATE() , GETDATE() , 44594.55, 3567.564, 1114.8638 )
 
-drop trigger Purchasing.CreditRating_trigger
+DROP TRIGGER Purchasing.CreditRating_trigger
 GO
 
 -- 5. Viết một trigger thực hiện trên bảng ProductInventory (lưu thông tin số lượng sản 
@@ -351,109 +355,109 @@ GO
 -- thời hủy giao tác.
 
 -- tạo bảng MProduct
-create table MProduct
+CREATE TABLE MProduct
 (
-	MProductID int not null primary key,
-	ProductName nvarchar(50),
-	ListPrice money
+	MProductID INT NOT NULL PRIMARY KEY,
+	ProductName NVARCHAR(50),
+	ListPrice MONEY
 )
 
-insert MProduct
+INSERT MProduct
 	(MProductID, ProductName,ListPrice)
-select [ProductID], [Name], [ListPrice]
-from [Production].[Product]
-where [ProductID]<=710
-select*
-from MProduct
+SELECT [ProductID], [Name], [ListPrice]
+FROM [Production].[Product]
+WHERE [ProductID]<=710
+SELECT*
+FROM MProduct
 
 -- tạo bảng MSalesOrderHeader
-create table MSalesOrderHeader
+CREATE TABLE MSalesOrderHeader
 (
-	MSalesOrderID int not null primary key,
-	OrderDate datetime
+	MSalesOrderID INT NOT NULL PRIMARY KEY,
+	OrderDate DATETIME
 )
 
-insert MSalesOrderHeader
-select [SalesOrderID], [OrderDate]
-from [Sales].[SalesOrderHeader]
-where [SalesOrderID] in (select [SalesOrderID]
-from [Sales].[SalesOrderDetail]
-where [ProductID]<=710)
-select*
-from MSalesOrderHeader
+INSERT MSalesOrderHeader
+SELECT [SalesOrderID], [OrderDate]
+FROM [Sales].[SalesOrderHeader]
+WHERE [SalesOrderID] IN (SELECT [SalesOrderID]
+FROM [Sales].[SalesOrderDetail]
+WHERE [ProductID]<=710)
+SELECT*
+FROM MSalesOrderHeader
 
 -- tạo bảng MSalesOrderDetail
-create table MSalesOrderDetail
+CREATE TABLE MSalesOrderDetail
 (
-	SalesOrderDetailID int IDENTITY(1,1) primary key,
-	ProductID int not null foreign key(ProductID) references MProduct(MProductID),
-	SalesOrderID int not null foreign key (SalesOrderID) references MSalesOrderHeader(MSalesOrderID),
-	OrderQty int
+	SalesOrderDetailID INT IDENTITY(1,1) PRIMARY KEY,
+	ProductID INT NOT NULL FOREIGN KEY(ProductID) REFERENCES MProduct(MProductID),
+	SalesOrderID INT NOT NULL FOREIGN KEY (SalesOrderID) REFERENCES MSalesOrderHeader(MSalesOrderID),
+	OrderQty INT
 )
-insert MSalesOrderDetail
+INSERT MSalesOrderDetail
 	(ProductID, SalesOrderID,OrderQty)
-select [ProductID], [SalesOrderID], [OrderQty]
-from [Sales].[SalesOrderDetail]
-where [ProductID] in(select MProductID
-from MProduct)
+SELECT [ProductID], [SalesOrderID], [OrderQty]
+FROM [Sales].[SalesOrderDetail]
+WHERE [ProductID] IN(SELECT MProductID
+FROM MProduct)
 
 -- tạo bảng MProduct_inventory
-create table MProduct_inventory
+CREATE TABLE MProduct_inventory
 (
-	productID int not null primary key,
-	quantity smallint
+	productID INT NOT NULL PRIMARY KEY,
+	quantity SMALLINT
 )
 
-insert MProduct_inventory
-select [ProductID], sum([Quantity]) as sumofquatity
-from [Production].[ProductInventory]
-group by [ProductID]
-go
+INSERT MProduct_inventory
+SELECT [ProductID], sum([Quantity]) AS sumofquatity
+FROM [Production].[ProductInventory]
+GROUP BY [ProductID]
+GO
 
 -- tạo trigger
-create trigger bai5 on MSalesOrderDetail
-for insert
+CREATE TRIGGER bai5 ON MSalesOrderDetail
+FOR INSERT
 AS
-begin
-	DECLARE @Qty int, @Quantity int, @productID int
-	select @qty = i.OrderQty, @productID = i.ProductID
-	from inserted i
+BEGIN
+	DECLARE @Qty INT, @Quantity INT, @productID INT
+	SELECT @qty = i.OrderQty, @productID = i.ProductID
+	FROM inserted i
 
-	select @Quantity =  p.Quantity
+	SELECT @Quantity =  p.Quantity
 	FROM MProduct_inventory p
 	WHERE @productID = p.ProductID
 
-	if(@Quantity > @Qty)
-	begin
-		update MProduct_inventory
-				set quantity = @Quantity - @Qty
-				where productID = @productID
-	end
-	ELSE if (@Quantity = 0)
-	begin
-		print N'Kho hết hàng'
-		rollback
-	end
-end
+	IF(@Quantity > @Qty)
+	BEGIN
+		UPDATE MProduct_inventory
+				SET quantity = @Quantity - @Qty
+				WHERE productID = @productID
+	END
+	ELSE IF (@Quantity = 0)
+	BEGIN
+		PRINT N'Kho hết hàng'
+		ROLLBACK
+	END
+END
 GO
 
-select*
-from MSalesOrderDetail
-select*
-from MSalesOrderHeader
-select*
-from MProduct_inventory
-where [ProductID]=708
+SELECT*
+FROM MSalesOrderDetail
+SELECT*
+FROM MSalesOrderHeader
+SELECT*
+FROM MProduct_inventory
+WHERE [ProductID]=708
 
 ---thuc thi trigger
-delete from [MSalesOrderDetail]
-insert [dbo].[MSalesOrderDetail]
-values(708, 43661, 300)
+DELETE FROM [MSalesOrderDetail]
+INSERT [dbo].[MSalesOrderDetail]
+VALUES(708, 43661, 300)
 
-drop trigger bai5
-drop table [MSalesOrderDetail]
-drop table [MSalesOrderHeader]
-drop table [MProduct_inventory]
+DROP TRIGGER bai5
+DROP TABLE [MSalesOrderDetail]
+DROP TABLE [MSalesOrderHeader]
+DROP TABLE [MProduct_inventory]
 
 -- 6. Tạo trigger cập nhật tiền thưởng (Bonus) cho nhân viên bán hàng SalesPerson, khi 
 -- người dùng chèn thêm một record mới trên bảng SalesOrderHeader, theo quy định 
@@ -479,49 +483,49 @@ drop table [MProduct_inventory]
 -- - Viết trigger cho thao tác insert trên bảng M_SalesOrderHeader, khi trigger 
 -- thực thi thì dữ liệu trong bảng M_SalesPerson được cập nhật.
 
-create table M_SalesPerson
+CREATE TABLE M_SalesPerson
 (
-	SalePSID int not null primary key,
-	TerritoryID int,
-	BonusPS money
+	SalePSID INT NOT NULL PRIMARY KEY,
+	TerritoryID INT,
+	BonusPS MONEY
 )
 
-create table M_SalesOrderHeader
+CREATE TABLE M_SalesOrderHeader
 (
-	SalesOrdID int not null primary key,
-	OrderDate date,
-	SubTotalOrd money,
-	SalePSID int foreign key references M_SalesPerson(SalePSID)
+	SalesOrdID INT NOT NULL PRIMARY KEY,
+	OrderDate DATE,
+	SubTotalOrd MONEY,
+	SalePSID INT FOREIGN KEY REFERENCES M_SalesPerson(SalePSID)
 )
 
-insert into M_SalesPerson
-select s.BusinessEntityID, s.TerritoryID, s.Bonus
-from Sales.SalesPerson as s
+INSERT INTO M_SalesPerson
+SELECT s.BusinessEntityID, s.TerritoryID, s.Bonus
+FROM Sales.SalesPerson AS s
 
-insert into M_SalesOrderHeader
-select s.SalesOrderID, s.OrderDate, s.SubTotal, s.SalesPersonID
-from Sales.SalesOrderHeader as s
-go
+INSERT INTO M_SalesOrderHeader
+SELECT s.SalesOrderID, s.OrderDate, s.SubTotal, s.SalesPersonID
+FROM Sales.SalesOrderHeader AS s
+GO
 
-CREATE trigger bonus_trigger on M_SalesOrderHeader
+CREATE TRIGGER bonus_trigger ON M_SalesOrderHeader
 FOR INSERT
-as
-	begin
-	DECLARE @doanhThu float, @maNV int
-	select @maNV= i.SalePSID
-	from inserted i
+AS
+	BEGIN
+	DECLARE @doanhThu FLOAT, @maNV INT
+	SELECT @maNV= i.SalePSID
+	FROM inserted i
 
-	set @doanhThu=(
-		select sum([SubTotalOrd])
-	from [dbo].[M_SalesOrderHeader]
-	where SalePSID=@maNV
+	SET @doanhThu=(
+		SELECT sum([SubTotalOrd])
+	FROM [dbo].[M_SalesOrderHeader]
+	WHERE SalePSID=@maNV
 	)
 
-	if (@doanhThu > 10000000)
-	begin
-		update M_SalesPerson
-				set BonusPS += BonusPS * 0.1
-				where SalePSID=@maNV
-	end
-end
-go
+	IF (@doanhThu > 10000000)
+	BEGIN
+		UPDATE M_SalesPerson
+				SET BonusPS += BonusPS * 0.1
+				WHERE SalePSID=@maNV
+	END
+END
+GO
