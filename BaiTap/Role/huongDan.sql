@@ -47,7 +47,8 @@ TO  sinhvien
 --Cách 2: user sinhvien co quyen truy van (read) moi table/view trong DB
 GO
 -- cac fixed database role (co san)
-sp_helprole
+EXEC sp_helprole
+
 GO
 USE AdventureWorks2008R2
 GO
@@ -80,8 +81,10 @@ GO
 --cách 4: tao user-defined database role 
 CREATE ROLE  banhang
 GO
+
 ALTER ROLE banhang ADD MEMBER  sinhvien
 GO
+
 GRANT SELECT , INSERT , UPDATE ,DELETE 
 ON  sales.SalesOrderHeader
 TO banhang
@@ -96,8 +99,10 @@ DENY SELECT
 ON sales.Store
 TO banhang
 GO
+
 ALTER ROLE db_datareader ADD MEMBER  banhang
 GO
+
 --test ...
 --remove user sinhvien khỏi role banhang
 ALTER ROLE banhang DROP MEMBER  sinhvien
