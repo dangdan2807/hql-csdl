@@ -1,5 +1,3 @@
--- 19529651 - Phạm Đăng Đan - DHKTPM15B
-
 USE master
 GO
 
