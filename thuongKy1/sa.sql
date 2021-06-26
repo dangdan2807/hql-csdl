@@ -24,35 +24,43 @@ WITH GRANT OPTION
 GO
 
 ALTER ROLE  db_datawriter 
-add MEMBER QL
+ADD MEMBER QL
 GO
 
 -- 1d
-select *
-from Production.Product
+SELECT *
+FROM Production.Product
 
 -- có thể truy cập Production.Product vì chỉ có quyền sa
 
 -- 1f
 REVOKE SELECT, INSERT, UPDATE ,DELETE
 ON Production.ProductInventory
-TO TN
+TO TN CASCADE
 
 ALTER ROLE  db_datawriter 
-Drop MEMBER QL
+DROP MEMBER QL
 GO
 
-Drop USER TN
-Drop USER NV
-Drop USER QL
+ALTER LOGIN TN DISABLED
+ALTER LOGIN NV DISABLED
+ALTER LOGIN QL DISABLED
+GO
 
-Drop LOGIN TN
-Drop LOGIN NV
-Drop LOGIN QL
+DROP USER TN
+DROP USER NV
+DROP USER QL
 
+DROP LOGIN TN
+DROP LOGIN NV
+DROP LOGIN QL
+GO
 
 -- 2
 USE master
+GO
+
+ALTER DATABASE AdventureWorks2008R2 SET RECOVERY FULL
 GO
 
 -- T1
@@ -63,7 +71,7 @@ GO
 
 -- T2
 SELECT *
-FROM   Production.Product
+FROM Production.Product
 
 
 -- T3
@@ -72,10 +80,10 @@ TO disk = N'D:\backup\adv2008back.bak'
 WITH differential
 
 -- T4
-delete from Person.EmailAddress
+DELETE FROM Person.EmailAddress
 
-select * 
-from Person.EmailAddress
+SELECT *
+FROM Person.EmailAddress
 
 -- T5
 BACKUP DATABASE AdventureWorks2008R2 -- file 3
@@ -84,16 +92,20 @@ WITH differential
 GO
 
 -- T6
-select * from Person.ContactType
+SELECT *
+FROM Person.ContactType
 
 INSERT INTO Person.ContactType
-             (Name, ModifiedDate)
-VALUES (N'hello', GETDATE())
+    (Name, ModifiedDate)
+VALUES
+    (N'hello', GETDATE())
 
-select * from Person.ContactType p
-where ContactTypeID = 21
+SELECT *
+FROM Person.ContactType p
+WHERE ContactTypeID = 21
 
 -- T7
+
 BACKUP LOG AdventureWorks2008R2 -- file 4
 TO disk = N'D:\backup\adv2008back.bak'
 
@@ -101,12 +113,12 @@ TO disk = N'D:\backup\adv2008back.bak'
 USE master
 GO
 
-Drop database AdventureWorks2008R2
+DROP DATABASE AdventureWorks2008R2
 
 -- T9
 RESTORE DATABASE AdventureWorks2008R2
 FROM disk = N'D:\backup\adv2008back.bak'
-WITH FILE = 1, replace,  NORECOVERY
+WITH FILE = 1, replace, NORECOVERY
 GO
 
 RESTORE DATABASE  AdventureWorks2008R2   
@@ -124,8 +136,42 @@ FROM DISK =  'D:\backup\adv2008back.bak'
 WITH  FILE=4 ,  RECOVERY
 
 -- T10
-use AdventureWorks2008R2
+USE AdventureWorks2008R2
 GO
 
-select * from Person.ContactType p
-Where p.ContactTypeID = 21
+SELECT *
+FROM Person.ContactType p
+WHERE p.ContactTypeID = 21
+
+
+SELECT *
+FROM Production.ProductReview
+GO
+
+CREATE TRIGGER v
+on Production.ProductReview
+after UPDATE
+as
+BEGIN
+    DECLARE @proID INT
+    SELECT @proID = i.ProductID
+    from inserted i
+
+    if Exists (select * FROM Production.Product p WHERE p.ProductID = @proID)
+    BEGIN
+        SELECT p.ProductID, p.Color, p.StandardCost, pr.Rating, pr.Comments
+        FROM Production.Product p, Production.ProductReview pr
+        WHERE p.ProductID = pr.ProductID
+        AND p.ProductID = @proID
+    end
+    else
+    BEGIN
+        print N'Không có thông tin sản phẩm'
+        ROLLBACK
+    end
+END
+GO
+
+update Production.ProductReview
+set Comments = N'1'
+where ProductReviewID = 1

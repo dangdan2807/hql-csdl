@@ -1,8 +1,8 @@
 USE AdventureWorks2008R2
 GO
 
-select * 
-from Production.ProductInventory
+SELECT *
+FROM Production.ProductInventory
 
 -- phân quyền cho nhân viên
 GRANT SELECT, INSERT, UPDATE ,DELETE
@@ -11,12 +11,12 @@ TO NV
 
 -- 1c
 -- chọn ProductID = 3 để xóa
-Delete from Production.ProductInventory 
-where ProductID = 3
+DELETE FROM Production.ProductInventory 
+WHERE ProductID = 3
 
 -- 1d
-select *
-from Production.Product
+SELECT *
+FROM Production.Product
 
 -- không thể truy cập Production.Product vì chỉ có quyền trên Production.ProductInventory
 

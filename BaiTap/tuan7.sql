@@ -59,9 +59,9 @@ GO
 
 -- tạo trigger
 CREATE TRIGGER insteadof_trigger ON EmpDepart_View
-	instead OF INSERT
-	AS	
-	BEGIN
+instead OF INSERT
+AS	
+BEGIN
 	INSERT M_Department
 	SELECT DepartmentID, Name, groupName
 	FROM inserted
@@ -165,28 +165,26 @@ WITH
 	(
 					SELECT CustomerId
 			FROM inserted
-
 		UNION
-
 			SELECT CustomerId
 			FROM deleted
 	)
 
-	UPDATE Mcustomer
-	SET custpriority = (
-		CASE
-		WHEN t.Total < 10000 THEN 3
-		WHEN t.Total BETWEEN 10000 AND 49999 THEN 2
-		WHEN t.Total >= 50000 THEN 1
-		END
-	)
-	FROM MSalesOrders AS c INNER JOIN CTE ON CTE.CustomerId = c.CustomerId
+UPDATE Mcustomer
+SET custpriority = (
+CASE
+WHEN t.Total < 10000 THEN 3
+WHEN t.Total BETWEEN 10000 AND 49999 THEN 2
+WHEN t.Total >= 50000 THEN 1
+END
+)
+FROM MSalesOrders AS c INNER JOIN CTE ON CTE.CustomerId = c.CustomerId
 	LEFT JOIN (
-		SELECT MsalesOrders.customerID, SUM(SubTotal) Total
+SELECT MsalesOrders.customerID, SUM(SubTotal) Total
 	FROM MsalesOrders INNER JOIN CTE
 		ON CTE.CustomerId = MsalesOrders.CustomerId
 	GROUP BY MsalesOrders.customerID
-	) t ON CTE.CustomerId = t.CustomerId
+) t ON CTE.CustomerId = t.CustomerId
 GO
 
 INSERT MsalesOrders

@@ -1,12 +1,12 @@
 ﻿USE AdventureWorks2008R2
 GO
 
-select * 
-from Production.ProductInventory
-Where ProductID = 2 and ProductID = 3
+SELECT *
+FROM Production.ProductInventory
+WHERE ProductID = 2 AND ProductID = 3
 
 -- 1d
-select *
-from Production.Product
+SELECT *
+FROM Production.Product
 
 -- có thể truy cập Production.Product vì chỉ có quyền db_datawriter
